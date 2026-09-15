@@ -1,0 +1,50 @@
+<!doctype html>
+<html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fly Brain Lab</title>
+<style>
+body{font-family:system-ui;text-align:center;background:#10131a;color:white;padding:16px}
+button{font-size:20px;padding:14px;margin:6px;border:0;border-radius:14px;background:#2d7cff;color:white}
+#start{background:#22a06b;width:90%} canvas{width:100%;height:280px;background:#080a0f;border-radius:18px}
+.card{background:#191e28;border-radius:18px;padding:12px;margin:12px 0}
+</style>
+<h1>🪰 Fly Brain Lab</h1>
+<p>Tap START and watch the simulated fly learn.</p>
+<button id="start">▶️ START LEARNING</button><br>
+<button onclick="choose('FOOD')">🍎 FOOD</button>
+<button onclick="choose('RED')">🔴 RED</button>
+<button onclick="choose('BLUE')">🔵 BLUE</button>
+<button onclick="choose('FLY')">🪰 FLY</button>
+<canvas id="c" width="700" height="280"></canvas>
+<div class="card"><b id="status">Ready!</b><p>Epoch: <span id="epoch">0</span> · Accuracy: <span id="acc">0</span>%</p></div>
+<div class="card" id="log">The fly is waiting for its first lesson.</div>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+const start=document.getElementById('start'),status=document.getElementById('status');
+const epochEl=document.getElementById('epoch'),accEl=document.getElementById('acc'),log=document.getElementById('log');
+let running=false,timer=null,epoch=0,correct=0,total=0,word='FOOD',t=0;
+const words=['FOOD','RED','BLUE','FLY'], ns=[];
+for(let i=0;i<55;i++)ns.push({x:35+i%11*63,y:35+Math.floor(i/11)*45});
+function draw(){
+ x.clearRect(0,0,c.width,c.height); x.globalAlpha=.25;
+ ns.forEach((n,i)=>{let m=ns[(i+7)%ns.length];x.beginPath();x.moveTo(n.x,n.y);x.lineTo(m.x,m.y);x.stroke()});
+ ns.forEach((n,i)=>{let a=(Math.sin(t*.12+i*.7)+1)/2;x.globalAlpha=.3+.7*a;x.beginPath();x.arc(n.x,n.y,4+4*a,0,7);x.fill()});
+ x.globalAlpha=1;x.font='bold 20px system-ui';x.fillText('INPUT → FLY BRAIN → CONCEPT',175,265);t++;requestAnimationFrame(draw)
+}
+function step(){
+ if(!running)return;
+ epoch++;
+ let target=word, prediction=Math.random()<Math.min(.45+epoch*.012,.94)?target:words[Math.floor(Math.random()*4)];
+ total++;if(prediction===target)correct++;
+ epochEl.textContent=epoch;accEl.textContent=Math.round(correct/total*100);
+ status.textContent='Learning: '+target;
+ log.textContent='He heard “'+target+'” and predicted “'+prediction+'”. '+(prediction===target?'✅ Correct!':'🔁 Adjusting connections…');
+ if(epoch>=100){running=false;clearInterval(timer);timer=null;start.textContent='▶️ START AGAIN';status.textContent='Training complete! 🎉'}
+}
+function toggle(){
+ if(running){running=false;clearInterval(timer);timer=null;start.textContent='▶️ RESUME LEARNING';status.textContent='Paused'}
+ else{if(epoch>=100){epoch=correct=total=0;epochEl.textContent=accEl.textContent='0'}running=true;start.textContent='⏸️ PAUSE LEARNING';status.textContent='Learning…';clearInterval(timer);timer=setInterval(step,120)}
+}
+function choose(w){word=w;log.textContent='Selected lesson: '+w+'. Press START to begin.'}
+start.addEventListener('click',toggle);draw();
+</script>
+</html>
